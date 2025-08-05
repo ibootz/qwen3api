@@ -23,7 +23,6 @@ Content-Type: application/json
 | 新建会话 | `POST /api/v2/chats/new` | 返回 `chat_id` |
 | 发送消息 | `POST /api/v2/chat/completions?chat_id={chat_id}` | 支持普通 / 流式响应 |
 | 查询历史 | `GET  /api/v2/chats/{chat_id}` | 拉取历史消息 |
-| Token 检查 | `POST /token/check` | 后端自带接口，快速验证 JWT 有效性 |
 
 ## 3. 请求体差异（三种模式）
 

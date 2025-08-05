@@ -7,7 +7,7 @@
 - ✅ **兼容 OpenAI API 格式**：可直接替换 OpenAI 客户端的 base_url
 - ✅ **多 Token 轮询**：支持配置多个 JWT Token，自动轮换使用避免限流
 - ✅ **Docker 支持**：提供 Dockerfile 和 docker-compose.yml 一键部署
-- ✅ **三种模式**：普通聊天、深度思考、搜索模式
+- ✅ **支持的模型**：qwen3-235b-a22b、qwen3-coder-plus、qwen3-coder-30b-a3b-instruct
 - ✅ **流式响应**：支持 Server-Sent Events (SSE) 流式输出
 - ✅ **自动会话管理**：自动创建和管理 chat_id
 
@@ -27,16 +27,32 @@ poetry install
 
 ### 2. 配置环境变量
 
-复制配置文件模板：
-```bash
-cp .env.example .env
-```
+#### 配置方式
 
-编辑 `.env` 文件，填入你的 JWT Token（可配置多个，用逗号分隔）：
-```bash
-QWEN_TOKENS=your_jwt_token_1,your_jwt_token_2,your_jwt_token_3
-PORT=8220
-```
+推荐使用 YAML 配置文件，更加清晰优雅：
+
+1. 复制配置文件模板：
+   ```bash
+   cp config.example.yaml config.yaml
+   ```
+
+2. 编辑 `config.yaml` 文件，填入你的完整鉴权信息：
+   ```yaml
+   qwen_token_groups:
+     - token: "your_jwt_token_1"
+       bx_ua: "your_bx_ua_value_1"
+       bx_umidtoken: "your_bx_umidtoken_value_1"
+     - token: "your_jwt_token_2"
+       bx_ua: "your_bx_ua_value_2"
+       bx_umidtoken: "your_bx_umidtoken_value_2"
+   
+   port: 8220
+   qwen_bx_v: "2.5.31"
+   qwen_source: "web"
+   qwen_timezone: "Asia/Shanghai"
+   ```
+
+如果仍想使用环境变量配置，请参考 `.env.example` 文件。
 
 ### 3. 启动服务
 
@@ -101,21 +117,41 @@ curl -N -X POST http://localhost:8220/v1/chat/completions \
 - `qwen3-coder-plus`
 - `qwen3-coder-30b-a3b-instruct`
 
-## 环境变量
+## 配置选项
+
+### YAML 配置文件（推荐）
+
+| 配置项 | 描述 | 默认值 |
+|--------|------|--------|
+| `qwen_token_groups` | Token组配置列表 | 必填 |
+| `port` | 服务端口 | `8220` |
+| `qwen_bx_v` | API版本 | `2.5.31` |
+| `qwen_source` | 来源标识 | `web` |
+| `qwen_timezone` | 时区设置 | `Asia/Shanghai` |
+
+### 环境变量（兼容模式）
 
 | 变量名 | 描述 | 默认值 |
 |--------|------|--------|
-| `QWEN_TOKENS` | JWT Token列表（逗号分隔） | 必填 |
+| `CONFIG_FILE` | YAML配置文件路径 | `config.yaml` |
+| `QWEN_TOKEN_GROUPS` | Token组配置（格式：token\|bx_ua\|bx_umidtoken） | 可选 |
+| `QWEN_TOKENS` | JWT Token列表（逗号分隔，不推荐） | 可选 |
 | `PORT` | 服务端口 | `8220` |
 | `QWEN_API_BASE_URL` | Qwen API基础URL | `https://chat.qwen.ai` |
+| `QWEN_BX_V` | API版本 | `2.5.31` |
+| `QWEN_SOURCE` | 来源标识 | `web` |
+| `QWEN_TIMEZONE` | 时区设置 | `Asia/Shanghai` |
 
-## 获取 JWT Token
+## 获取鉴权信息
 
 1. 访问 https://chat.qwen.ai
 2. 登录你的账号
 3. 打开浏览器开发者工具 (F12)
-4. 在 Application/Storage 中找到 `token` 或 `qwen-auth-token`
-5. 复制 Token 值到 `.env` 文件中
+4. 在 Network 面板中，找到任意 API 请求
+5. 复制以下三个值到 `config.yaml` 文件中：
+   - **token**: 从请求头的 `Authorization` 中提取（去掉 `Bearer ` 前缀）
+   - **bx-ua**: 从请求头的 `bx-ua` 中获取
+   - **bx-umidtoken**: 从请求头的 `bx-umidtoken` 中获取
 
 ## 开发
 
