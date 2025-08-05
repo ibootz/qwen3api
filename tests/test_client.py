@@ -3,12 +3,9 @@
 测试QwenClient类的功能
 """
 import pytest
-import httpx
-from unittest.mock import Mock, patch, AsyncMock
-
 from app.client import QwenClient
 from app.config import config
-
+from unittest.mock import Mock, patch
 
 class TestQwenClient:
     """QwenClient测试类"""
@@ -17,9 +14,7 @@ class TestQwenClient:
     def token_group(self):
         """测试用token组fixture"""
         return {
-            "token": "test_token_123",
-            "bx_ua": "test_bx_ua",
-            "bx_umidtoken": "test_bx_umidtoken"
+            "token": "test_token_123"
         }
     
     @pytest.fixture
@@ -30,8 +25,7 @@ class TestQwenClient:
     def test_client_initialization(self, client, token_group):
         """测试客户端初始化"""
         assert client.token == token_group["token"]
-        assert client.bx_ua == token_group["bx_ua"]
-        assert client.bx_umidtoken == token_group["bx_umidtoken"]
+
         assert client.base_url == config.qwen_api_base_url
         assert "Authorization" in client.headers
         assert client.headers["Authorization"] == f"Bearer {token_group['token']}"

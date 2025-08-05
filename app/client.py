@@ -7,7 +7,7 @@ import httpx
 import logging
 import json
 import time
-from typing import Dict, Any, AsyncGenerator, Optional
+from typing import Dict, Any, AsyncGenerator
 from .config import config
 
 logger = logging.getLogger(__name__)
@@ -20,21 +20,18 @@ class QwenClient:
         初始化Qwen客户端
         
         Args:
-            token_group: 包含token、bx_ua、bx_umidtoken的字典
+            token_group: 包含token的字典
         """
         self.token = token_group["token"]
-        self.bx_ua = token_group["bx_ua"]
-        self.bx_umidtoken = token_group["bx_umidtoken"]
         self.base_url = config.qwen_api_base_url
         
         self.headers = {
             "Authorization": f"Bearer {self.token}",
-            "bx-ua": self.bx_ua,
-            "bx-umidtoken": self.bx_umidtoken,
-            "bx-v": config.qwen_bx_v,
+            "Host": "chat.qwen.ai",
             "source": config.qwen_source,
-            "timezone": config.qwen_timezone,
-            "Content-Type": "application/json",
+            "Connection": "keep-alive",
+            "Origin": "https://chat.qwen.ai",
+            "Content-Type": "application/json; charset=UTF-8",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
         
@@ -165,10 +162,11 @@ class QwenClient:
         Yields:
             str: SSE格式的响应数据
         """
-        url = f"{self.base_url}/chats/{chat_id}/completions"
+        url = f"{self.base_url}/chat/completions?chat_id={chat_id}"
         
         logger.info(f"开始流式聊天补全: chat_id={chat_id}")
         logger.debug(f"请求负载: {json.dumps(payload, ensure_ascii=False)}")
+        logger.debug(f"请求头: {json.dumps(self.headers, ensure_ascii=False)}")
         
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -212,7 +210,7 @@ class QwenClient:
         Raises:
             httpx.HTTPError: API调用失败时抛出
         """
-        url = f"{self.base_url}/chats/{chat_id}/completions"
+        url = f"{self.base_url}/chat/completions?chat_id={chat_id}"
         
         logger.info(f"开始非流式聊天补全: chat_id={chat_id}")
         logger.debug(f"请求负载: {json.dumps(payload, ensure_ascii=False)}")

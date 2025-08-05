@@ -4,8 +4,9 @@
 """
 import re
 import logging
-from typing import List, Dict, Any, Optional
-from pathlib import Path
+from typing import Dict, List
+import yaml
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class ConfigValidator:
         Returns:
             bool: 验证是否通过
         """
-        required_fields = ["token", "bx_ua", "bx_umidtoken"]
+        required_fields = ["token"]
         
         for field in required_fields:
             if field not in token_group:

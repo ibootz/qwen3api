@@ -125,7 +125,6 @@ curl -N -X POST http://localhost:8220/v1/chat/completions \
 |--------|------|--------|
 | `qwen_token_groups` | Token组配置列表 | 必填 |
 | `port` | 服务端口 | `8220` |
-| `qwen_bx_v` | API版本 | `2.5.31` |
 | `qwen_source` | 来源标识 | `web` |
 | `qwen_timezone` | 时区设置 | `Asia/Shanghai` |
 
@@ -134,11 +133,10 @@ curl -N -X POST http://localhost:8220/v1/chat/completions \
 | 变量名 | 描述 | 默认值 |
 |--------|------|--------|
 | `CONFIG_FILE` | YAML配置文件路径 | `config.yaml` |
-| `QWEN_TOKEN_GROUPS` | Token组配置（格式：token\|bx_ua\|bx_umidtoken） | 可选 |
+| `QWEN_TOKEN_GROUPS` | Token组配置（格式：token） | 可选 |
 | `QWEN_TOKENS` | JWT Token列表（逗号分隔，不推荐） | 可选 |
 | `PORT` | 服务端口 | `8220` |
 | `QWEN_API_BASE_URL` | Qwen API基础URL | `https://chat.qwen.ai` |
-| `QWEN_BX_V` | API版本 | `2.5.31` |
 | `QWEN_SOURCE` | 来源标识 | `web` |
 | `QWEN_TIMEZONE` | 时区设置 | `Asia/Shanghai` |
 
@@ -148,10 +146,8 @@ curl -N -X POST http://localhost:8220/v1/chat/completions \
 2. 登录你的账号
 3. 打开浏览器开发者工具 (F12)
 4. 在 Network 面板中，找到任意 API 请求
-5. 复制以下三个值到 `config.yaml` 文件中：
+5. 复制以下值到 `config.yaml` 文件中：
    - **token**: 从请求头的 `Authorization` 中提取（去掉 `Bearer ` 前缀）
-   - **bx-ua**: 从请求头的 `bx-ua` 中获取
-   - **bx-umidtoken**: 从请求头的 `bx-umidtoken` 中获取
 
 ## 开发
 

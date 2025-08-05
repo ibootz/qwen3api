@@ -16,13 +16,13 @@ class Config:
     
     def __init__(self):
         self.qwen_token_groups: List[Dict[str, str]] = []
-        self.qwen_api_base_url: str = "https://chat.qwen.ai"
+        self.qwen_api_base_url: str = "https://chat.qwen.ai/api/v2"
         self.port: int = 8220
         self.qwen_bx_v: str = "2.5.31"
         self.qwen_source: str = "web"
         self.qwen_timezone: str = "Asia/Shanghai"
-        self.log_level: str = "INFO"
-        self.log_file: str = "qwen_api.log"
+        self.log_level: str = "DEBUG"
+        self.log_file: str = "logs/qwen_api.log"
         self.config_file: str = "config.yaml"
         
     def load_config(self) -> None:
@@ -107,11 +107,9 @@ class Config:
                     token_groups = []
                     for group_str in tokens_env.split(','):
                         parts = group_str.strip().split('|')
-                        if len(parts) >= 3:
+                        if len(parts) >= 1:
                             token_groups.append({
-                                'token': parts[0].strip(),
-                                'bx_ua': parts[1].strip(),
-                                'bx_umidtoken': parts[2].strip()
+                                'token': parts[0].strip()
                             })
                     self.qwen_token_groups = token_groups
                     
@@ -127,7 +125,7 @@ class Config:
             
         # 验证每个token组的完整性
         for i, group in enumerate(self.qwen_token_groups):
-            required_fields = ['token', 'bx_ua', 'bx_umidtoken']
+            required_fields = ['token']
             for field in required_fields:
                 if field not in group or not group[field]:
                     logger.error(f"第 {i+1} 个 token 组缺少必需字段: {field}")

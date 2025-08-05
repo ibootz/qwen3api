@@ -5,7 +5,6 @@ API路由模块
 import uuid
 import logging
 import json
-from typing import Dict, Any
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from itertools import cycle
@@ -67,9 +66,7 @@ async def get_next_client() -> QwenClient:
         # 找到对应的客户端
         target_client = None
         for client in client_pool.values():
-            if (client.token == token_group['token'] and 
-                client.bx_ua == token_group['bx_ua'] and 
-                client.bx_umidtoken == token_group['bx_umidtoken']):
+            if client.token == token_group['token']:
                 target_client = client
                 break
         
@@ -156,8 +153,8 @@ async def chat_completions(request: Request):
         model = body.get("model")
         messages = body.get("messages", [])
         stream = body.get("stream", False)
-        max_tokens = body.get("max_tokens", 2048)
-        temperature = body.get("temperature", 0.7)
+        max_tokens = body.get("max_tokens", 4096)
+        temperature = body.get("temperature", 0)
         
         if not model:
             raise HTTPException(status_code=400, detail="缺少model参数")
@@ -172,13 +169,49 @@ async def chat_completions(request: Request):
         logger.info(f"[请求ID: {request_id}] 创建新对话: model={model}")
         chat_id = await client.create_new_chat(model)
         
-        # 构建请求负载
+        # 构建Qwen Chat格式的请求负载
+        import time
+        
+        # 生成唯一ID
+        current_timestamp = int(time.time())
+        
+        # 转换messages格式为Qwen Chat格式
+        qwen_messages = []
+        for msg in messages:
+            qwen_message = {
+                "fid": str(uuid.uuid4()),
+                "parentId": None,
+                "childrenIds": [str(uuid.uuid4())],
+                "role": msg.get("role", "user"),
+                "content": msg.get("content", ""),
+                "user_action": "chat",
+                "files": [],
+                "timestamp": current_timestamp,
+                "models": [model],
+                "chat_type": "t2t",
+                "feature_config": {
+                    "thinking_enabled": False,
+                    "output_schema": "phase"
+                },
+                "extra": {
+                    "meta": {
+                        "subChatType": "t2t"
+                    }
+                },
+                "sub_chat_type": "t2t",
+                "parent_id": None
+            }
+            qwen_messages.append(qwen_message)
+        
         payload = {
+            "stream": stream,
+            "incremental_output": True,
+            "chat_id": chat_id,
+            "chat_mode": "normal",
             "model": model,
-            "messages": messages,
-            "max_tokens": max_tokens,
-            "temperature": temperature,
-            "stream": stream
+            "parent_id": None,
+            "messages": qwen_messages,
+            "timestamp": current_timestamp
         }
         
         # 处理流式或非流式响应
@@ -195,14 +228,20 @@ async def chat_completions(request: Request):
                 finally:
                     yield "data: [DONE]\n\n"
             
+            # 生成标准的OpenAI响应头
+            response_headers = {
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+                "Content-Type": "text/event-stream; charset=utf-8",
+                "X-Request-Id": request_id,
+                "X-Actual-Status-Code": "200"
+            }
+            
             return StreamingResponse(
                 generate_stream(),
-                media_type="text/plain",
-                headers={
-                    "Cache-Control": "no-cache",
-                    "Connection": "keep-alive",
-                    "X-Accel-Buffering": "no"
-                }
+                media_type="text/event-stream",
+                headers=response_headers
             )
         else:
             logger.info(f"[请求ID: {request_id}] 开始非流式响应")
@@ -210,7 +249,14 @@ async def chat_completions(request: Request):
             try:
                 response_data = await client.chat_completions(chat_id, payload)
                 logger.info(f"[请求ID: {request_id}] 非流式响应完成")
-                return JSONResponse(content=response_data)
+                
+                # 添加标准的OpenAI响应头
+                response_headers = {
+                    "X-Request-Id": request_id,
+                    "X-Actual-Status-Code": "200"
+                }
+                
+                return JSONResponse(content=response_data, headers=response_headers)
                 
             except Exception as e:
                 logger.error(f"[请求ID: {request_id}] 非流式响应失败: {e}")

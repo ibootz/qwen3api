@@ -2,17 +2,13 @@
 # 支持多个账号轮询，防止单账号被封
 
 # Token 组配置（必填）
-# 每组必须包含 token、bx_ua、bx_umidtoken 三个字段
+# 每组必须包含 token 字段
 qwen_token_groups:
   - token: "your_jwt_token_1"
-    bx_ua: "your_bx_ua_value_1"
-    bx_umidtoken: "your_bx_umidtoken_value_1"
   - token: "your_jwt_token_2"
-    bx_ua: "your_bx_ua_value_2"
-    bx_umidtoken: "your_bx_umidtoken_value_2"
 
 # API配置
-qwen_api_base_url: "https://chat.qwen.ai"
+qwen_api_base_url: "https://chat.qwen.ai/api/v2"
 
 # 支持的模型列表
 # - qwen3-235b-a22b
@@ -21,7 +17,6 @@ qwen_api_base_url: "https://chat.qwen.ai"
 
 # 通用配置
 port: 8220
-qwen_bx_v: "2.5.31"
 qwen_source: "web"
 qwen_timezone: "Asia/Shanghai"
 log_level: "INFO"

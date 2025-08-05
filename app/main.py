@@ -10,16 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import config
 from .api import router, initialize_clients
 
-# 配置日志
-logging.basicConfig(
-    level=getattr(logging, config.log_level.upper()),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(config.log_file, encoding='utf-8')
-    ]
-)
-
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
@@ -38,7 +28,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"配置加载失败: {e}")
         raise
-    
+
+    # 日志初始化（必须等配置加载完再做！）
+    import os
+    from pathlib import Path
+    log_path = Path(config.log_file)
+    if not log_path.parent.exists():
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        level=getattr(logging, config.log_level.upper()),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.StreamHandler(),
+            logging.FileHandler(config.log_file, encoding='utf-8')
+        ]
+    )
+    logger.info(f"日志系统已初始化，日志文件: {config.log_file}")
+
     # 初始化客户端
     try:
         initialize_clients()
@@ -46,11 +52,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"客户端初始化失败: {e}")
         raise
-    
+
     logger.info(f"服务启动完成，监听端口: {config.port}")
-    
+
     yield
-    
+
     # 关闭时
     logger.info("正在关闭 Qwen API 服务...")
 
