@@ -155,6 +155,20 @@ async def chat_completions(request: Request):
         messages = body.get("messages", [])
         stream = body.get("stream", False)
         
+        # 处理深度思考模式参数 - 兼容多种方式
+        thinking_mode = body.get("thinking_mode", {})
+        # 支持通过model名称启用思考模式
+        if "thinking" in model.lower() or "deep" in model.lower():
+            thinking_mode["enabled"] = thinking_mode.get("enabled", True)
+            
+        # 设置默认值
+        if not thinking_mode:
+            thinking_mode = {
+                "enabled": False,
+                "depth": "normal",
+                "show_reasoning": False
+            }
+        
         if not model:
             raise HTTPException(status_code=400, detail="缺少model参数")
         
@@ -177,6 +191,18 @@ async def chat_completions(request: Request):
         # 转换messages格式为Qwen Chat格式
         qwen_messages = []
         for msg in messages:
+            # 处理每条消息的feature_config
+            msg_feature_config = msg.get("feature_config", {})
+            # 如果消息中没有设置，则使用全局的
+            if not msg_feature_config and feature_config:
+                msg_feature_config = feature_config
+            # 如果都没有设置，使用默认值
+            elif not msg_feature_config:
+                msg_feature_config = {
+                    "thinking_enabled": thinking_mode.get("enabled", False),
+                    "output_schema": "phase"
+                }
+            
             qwen_message = {
                 "fid": str(uuid.uuid4()),
                 "parentId": None,
@@ -188,10 +214,7 @@ async def chat_completions(request: Request):
                 "timestamp": current_timestamp,
                 "models": [model],
                 "chat_type": "t2t",
-                "feature_config": {
-                    "thinking_enabled": False,
-                    "output_schema": "phase"
-                },
+                "feature_config": msg_feature_config,
                 "extra": {
                     "meta": {
                         "subChatType": "t2t"
@@ -212,6 +235,11 @@ async def chat_completions(request: Request):
             "messages": qwen_messages,
             "timestamp": current_timestamp
         }
+        
+        # 根据thinking_mode参数设置thinking_enabled
+        if thinking_mode.get("enabled"):
+            for msg in payload["messages"]:
+                msg["feature_config"]["thinking_enabled"] = True
         
         # 处理流式或非流式响应
         if stream:

@@ -12,6 +12,7 @@
 - ✅ **支持的模型**：qwen3-235b-a22b、qwen3-coder-plus、qwen3-coder-30b-a3b-instruct
 - ✅ **流式响应**：支持 Server-Sent Events (SSE) 流式输出
 - ✅ **自动会话管理**：自动创建和管理 chat_id
+- ✅ **深度思考模式**：支持通过参数启用深度思考模式
 
 ## 快速开始
 
@@ -103,12 +104,24 @@ curl -X POST http://localhost:8220/v1/chat/completions \
 
 ### 深度思考模式
 ```bash
+# 方式1：使用 thinking_mode 参数（推荐）
 curl -X POST http://localhost:8220/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_token" \
   -d '{
     "model": "qwen3-coder-plus",
-    "mode": "thinking",
+    "thinking_mode": {
+      "enabled": true
+    },
+    "messages": [{"role": "user", "content": "请深度思考这个问题"}]
+  }'
+
+# 方式2：使用模型名称
+curl -X POST http://localhost:8220/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your_token" \
+  -d '{
+    "model": "qwen3-deep-thinking",
     "messages": [{"role": "user", "content": "请深度思考这个问题"}]
   }'
 ```
