@@ -105,13 +105,14 @@ async def list_models():
     logger.info(f"[请求ID: {request_id}] 获取模型列表")
     
     try:
-        client = get_next_client()
+        client = await get_next_client()
         models_data = await client.list_models()
         
         # 转换格式以兼容OpenAI API
-        if "data" in models_data:
+        # 检查数据结构: {"success": True, "data": {"data": [...]}}
+        if "data" in models_data and "data" in models_data["data"]:
             models = []
-            for model in models_data["data"]:
+            for model in models_data["data"]["data"]:
                 models.append({
                     "id": model.get("id", ""),
                     "object": "model",

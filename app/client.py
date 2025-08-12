@@ -37,7 +37,7 @@ class QwenClient:
         
         logger.debug(f"创建 QwenClient 实例，token: {self.token[:20]}...")
     
-    async def _request(self, method: str, url: str, max_retries: int = 3, **kwargs) -> httpx.Response:
+    async def _request(self, method: str, url: str, max_retries: int = 3, follow_redirects: bool = True, **kwargs) -> httpx.Response:
         """
         发送HTTP请求，支持重试机制
         
@@ -45,6 +45,7 @@ class QwenClient:
             method: 请求方法
             url: 请求URL
             max_retries: 最大重试次数
+            follow_redirects: 是否跟随重定向
             **kwargs: 其他请求参数
             
         Returns:
@@ -58,7 +59,7 @@ class QwenClient:
         
         for attempt in range(max_retries + 1):
             try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                async with httpx.AsyncClient(timeout=30.0, follow_redirects=follow_redirects) as client:
                     response = await client.request(method, url, headers=self.headers, **kwargs)
                     
                     # 检查响应状态
