@@ -153,8 +153,6 @@ async def chat_completions(request: Request):
         model = body.get("model")
         messages = body.get("messages", [])
         stream = body.get("stream", False)
-        max_tokens = body.get("max_tokens", 4096)
-        temperature = body.get("temperature", 0)
         
         if not model:
             raise HTTPException(status_code=400, detail="缺少model参数")
@@ -287,7 +285,6 @@ async def get_config():
     return {
         "qwen_api_base_url": config.qwen_api_base_url,
         "port": config.port,
-        "qwen_bx_v": config.qwen_bx_v,
         "qwen_source": config.qwen_source,
         "qwen_timezone": config.qwen_timezone,
         "token_groups_count": len(config.get_token_groups()),

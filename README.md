@@ -2,6 +2,8 @@
 
 一个基于 FastAPI 的 Qwen3 聊天 API 代理服务，支持多 Token 轮询、Docker 部署，并提供兼容 OpenAI 的接口。
 
+> **注意**：本项目使用 `uv` 进行依赖管理，使用 `asdf` 进行 Python 版本管理。
+
 ## 特性
 
 - ✅ **兼容 OpenAI API 格式**：可直接替换 OpenAI 客户端的 base_url
@@ -13,16 +15,36 @@
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 环境准备
 
-#### 方式一：直接运行
+确保已安装 [asdf](https://asdf-vm.com/) 和 [uv](https://github.com/astral-sh/uv)。
+
 ```bash
-pip install -r requirements.txt
+# 安装 Python 插件（如果尚未安装）
+asdf plugin add python
+
+# 查看可用的 Python 版本
+asdf list all python
+
+# 安装项目所需的 Python 版本（替换 x.x.x 为具体版本号）
+asdf install python x.x.x
+
+# 设置项目 Python 版本
+asdf set python x.x.x
+
+# 验证 Python 版本
+python --version
 ```
 
-#### 方式二：使用 Poetry
+### 2. 安装依赖
+
 ```bash
-poetry install
+# 创建并激活虚拟环境
+uv venv -p $(asdf which python) .venv
+source .venv/bin/activate
+
+# 安装项目依赖
+uv pip install -e .
 ```
 
 ### 2. 配置环境变量
@@ -40,16 +62,9 @@ poetry install
    ```yaml
    qwen_token_groups:
      - token: "your_jwt_token_1"
-       bx_ua: "your_bx_ua_value_1"
-       bx_umidtoken: "your_bx_umidtoken_value_1"
      - token: "your_jwt_token_2"
-       bx_ua: "your_bx_ua_value_2"
-       bx_umidtoken: "your_bx_umidtoken_value_2"
    
    port: 8220
-   qwen_bx_v: "2.5.31"
-   qwen_source: "web"
-   qwen_timezone: "Asia/Shanghai"
    ```
 
 如果仍想使用环境变量配置，请参考 `.env.example` 文件。
@@ -152,24 +167,54 @@ curl -N -X POST http://localhost:8220/v1/chat/completions \
 ## 开发
 
 ### 项目结构
+
 ```
 qwen3api/
-├── main.py              # 主程序
-├── Dockerfile          # Docker镜像构建文件
-├── docker-compose.yml  # Docker Compose配置
-├── .env.example        # 环境变量模板
-├── pyproject.toml      # 项目依赖配置
-└── docs/
-    └── Qwen_API_analysis.md  # API分析文档
+├── app/                 # 应用代码
+│   ├── __init__.py
+│   ├── api.py          # API 路由
+│   ├── client.py       # Qwen 客户端
+│   └── config.py       # 配置管理
+├── tests/              # 测试代码
+│   └── test_api.py
+├── main.py             # 主程序入口
+├── Dockerfile          # Docker 镜像构建文件
+├── docker-compose.yml  # Docker Compose 配置
+├── pyproject.toml      # 项目元数据和依赖配置
+├── .python-version     # asdf Python 版本配置
+└── docs/               # 文档
+    └── Qwen_API_analysis.md  # API 分析文档
 ```
 
 ### 本地开发
-```bash
-# 安装开发依赖
-pip install -e .
 
-# 运行开发服务器（自动重载）
+确保已激活虚拟环境：
+
+```bash
+source .venv/bin/activate
+```
+
+#### 安装开发依赖
+```bash
+uv pip install -e ".[dev]"
+```
+
+#### 运行开发服务器（自动重载）
+```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8220
+```
+
+#### 代码质量检查
+```bash
+# 运行测试
+uv run pytest
+
+# 代码格式化
+uv run black .
+uv run isort .
+
+# 静态类型检查
+uv run mypy .
 ```
 
 ## 许可证

@@ -5,9 +5,9 @@ description = "基于FastAPI的Qwen3聊天API代理服务，提供OpenAI兼容�
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "ibootz", email = "ibootz@163.com"}
 ]
-keywords = ["qwen", "api", "fastapi", "chatbot", "ai"]
+keywords = ["qwen", "qwen-chat", "qwen2api", "api", "fastapi", "chatbot", "ai"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

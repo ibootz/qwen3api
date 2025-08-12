@@ -5,17 +5,10 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy the dependency files to the working directory
-COPY pyproject.toml .
-
-# Install Poetry
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir poetry
-
-# Configure Poetry to not create virtual environments
-RUN poetry config virtualenvs.create false
+COPY requirements.txt .
 
 # Install dependencies
-RUN poetry install --no-dev
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application's code to the working directory
 COPY . .
