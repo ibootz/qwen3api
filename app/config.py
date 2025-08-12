@@ -22,6 +22,7 @@ class Config:
         self.log_file: str = "logs/qwen_api.log"
         self.config_file: str = "config.yaml"
         self.qwen_source: str = "web"  # 添加缺失的 qwen_source 属性
+        self.qwen_timezone: str = "Asia/Shanghai"  # 添加缺失的 qwen_timezone 属性
 
     def load_config(self) -> None:
         """加载配置文件"""
@@ -43,6 +44,8 @@ class Config:
         self.log_level = os.getenv("LOG_LEVEL", self.log_level)
         self.log_file = os.getenv("LOG_FILE", self.log_file)
         self.config_file = os.getenv("CONFIG_FILE", self.config_file)
+        self.qwen_source = os.getenv("QWEN_SOURCE", self.qwen_source)
+        self.qwen_timezone = os.getenv("QWEN_TIMEZONE", self.qwen_timezone)
 
         # 从环境变量加载token组（兼容旧格式）
         self._load_token_groups_from_env()
@@ -69,6 +72,8 @@ class Config:
             # 更新其他配置
             config_mapping = {
                 'qwen_api_base_url': 'qwen_api_base_url',
+                'qwen_source': 'qwen_source',
+                'qwen_timezone': 'qwen_timezone',
                 'port': 'port',
                 'log_level': 'log_level',
                 'log_file': 'log_file'
@@ -132,6 +137,8 @@ class Config:
         return {
             'qwen_token_groups': self.qwen_token_groups,
             'qwen_api_base_url': self.qwen_api_base_url,
+            'qwen_source': self.qwen_source,
+            'qwen_timezone': self.qwen_timezone,
             'port': self.port,
             'log_level': self.log_level,
             'log_file': self.log_file
