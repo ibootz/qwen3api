@@ -113,13 +113,32 @@ async def list_models():
         if "data" in models_data and "data" in models_data["data"]:
             models = []
             for model in models_data["data"]["data"]:
+                model_id = model.get("id", "")
+                
+                # 添加基础模型
                 models.append({
-                    "id": model.get("id", ""),
+                    "id": model_id,
                     "object": "model",
                     "created": 1677610602,  # 固定时间戳
                     "owned_by": "qwen",
                     "permission": []
                 })
+                
+                # 为支持思考模式的模型添加-thinking后缀版本
+                supported_models_for_thinking = [
+                    "qwen3-coder-plus",
+                    "qwen3-coder-30b-a3b-instruct",
+                    "qwen3-235b-a22b"
+                ]
+                
+                if model_id in supported_models_for_thinking:
+                    models.append({
+                        "id": f"{model_id}-thinking",
+                        "object": "model",
+                        "created": 1677610602,  # 固定时间戳
+                        "owned_by": "qwen",
+                        "permission": []
+                    })
             
             response_data = {
                 "object": "list",
@@ -155,14 +174,33 @@ async def chat_completions(request: Request):
         messages = body.get("messages", [])
         stream = body.get("stream", False)
         
-        # 处理深度思考模式参数 - 兼容多种方式
+        # 处理深度思考模式 - 支持两种方式
         thinking_mode = body.get("thinking_mode", {})
-        # 支持通过model名称启用思考模式
-        if "thinking" in model.lower() or "deep" in model.lower():
-            thinking_mode["enabled"] = thinking_mode.get("enabled", True)
-            
-        # 设置默认值
-        if not thinking_mode:
+        
+        # 保存原始model名称，用于后续处理
+        base_model = model
+        thinking_enabled = False
+        
+        # 方式1：使用 thinking_mode 参数（推荐）
+        if isinstance(thinking_mode, dict) and thinking_mode.get("enabled"):
+            thinking_enabled = True
+            logger.info(f"[请求ID: {request_id}] 启用思考模式（thinking_mode参数）")
+        
+        # 方式2：使用模型名称后缀-thinking
+        elif "-thinking" in model.lower():
+            thinking_enabled = True
+            # 移除-thinking后缀获取基础模型名称
+            base_model = model.replace("-thinking", "")
+            logger.info(f"[请求ID: {request_id}] 启用思考模式（模型后缀-thinking），基础模型: {base_model}")
+        
+        # 设置thinking_mode结构体
+        if thinking_enabled:
+            thinking_mode = {
+                "enabled": True,
+                "depth": thinking_mode.get("depth", "normal") if isinstance(thinking_mode, dict) else "normal",
+                "show_reasoning": thinking_mode.get("show_reasoning", False) if isinstance(thinking_mode, dict) else False
+            }
+        else:
             thinking_mode = {
                 "enabled": False,
                 "depth": "normal",
@@ -178,9 +216,9 @@ async def chat_completions(request: Request):
         # 获取客户端
         client = await get_next_client()
         
-        # 创建新对话
-        logger.info(f"[请求ID: {request_id}] 创建新对话: model={model}")
-        chat_id = await client.create_new_chat(model)
+        # 创建新对话（使用基础模型名称）
+        logger.info(f"[请求ID: {request_id}] 创建新对话: model={base_model}")
+        chat_id = await client.create_new_chat(base_model)
         
         # 构建Qwen Chat格式的请求负载
         import time
@@ -193,15 +231,16 @@ async def chat_completions(request: Request):
         for msg in messages:
             # 处理每条消息的feature_config
             msg_feature_config = msg.get("feature_config", {})
-            # 如果消息中没有设置，则使用全局的
-            if not msg_feature_config and feature_config:
-                msg_feature_config = feature_config
-            # 如果都没有设置，使用默认值
-            elif not msg_feature_config:
+            
+            # 如果消息没有设置feature_config，使用thinking_mode参数
+            if not msg_feature_config:
                 msg_feature_config = {
-                    "thinking_enabled": thinking_mode.get("enabled", False),
+                    "thinking_enabled": thinking_enabled,
                     "output_schema": "phase"
                 }
+            # 如果消息设置了thinking_enabled，以消息的设置为准
+            elif "thinking_enabled" in msg_feature_config:
+                thinking_enabled = msg_feature_config["thinking_enabled"]
             
             qwen_message = {
                 "fid": str(uuid.uuid4()),
@@ -212,7 +251,7 @@ async def chat_completions(request: Request):
                 "user_action": "chat",
                 "files": [],
                 "timestamp": current_timestamp,
-                "models": [model],
+                "models": [base_model],  # 使用基础模型名称
                 "chat_type": "t2t",
                 "feature_config": msg_feature_config,
                 "extra": {
@@ -230,15 +269,17 @@ async def chat_completions(request: Request):
             "incremental_output": True,
             "chat_id": chat_id,
             "chat_mode": "normal",
-            "model": model,
+            "model": base_model,  # 使用基础模型名称
             "parent_id": None,
             "messages": qwen_messages,
             "timestamp": current_timestamp
         }
         
-        # 根据thinking_mode参数设置thinking_enabled
-        if thinking_mode.get("enabled"):
+        # 根据thinking_enabled状态设置thinking_enabled
+        if thinking_enabled:
             for msg in payload["messages"]:
+                if "feature_config" not in msg:
+                    msg["feature_config"] = {}
                 msg["feature_config"]["thinking_enabled"] = True
         
         # 处理流式或非流式响应

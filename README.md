@@ -64,7 +64,7 @@ uv pip install -e .
    qwen_token_groups:
      - token: "your_jwt_token_1"
      - token: "your_jwt_token_2"
-   
+
    port: 8220
    ```
 
@@ -116,34 +116,30 @@ curl -X POST http://localhost:8220/v1/chat/completions \
     "messages": [{"role": "user", "content": "请深度思考这个问题"}]
   }'
 
-# 方式2：使用模型名称
+# 方式2：使用模型名称后缀-thinking
 curl -X POST http://localhost:8220/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_token" \
   -d '{
-    "model": "qwen3-deep-thinking",
+    "model": "qwen3-coder-plus-thinking",
     "messages": [{"role": "user", "content": "请深度思考这个问题"}]
   }'
 ```
 
-### 搜索模式 + 流式响应
+### 搜索模式（使用模型名称后缀-search）+ 流式响应
 ```bash
 curl -N -X POST http://localhost:8220/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_token" \
   -d '{
-    "model": "qwen3-coder-plus",
-    "mode": "search",
+    "model": "qwen3-coder-plus-search",
     "stream": true,
     "messages": [{"role": "user", "content": "搜索最新AI新闻"}]
   }'
 ```
 
-## 支持的模型
+## TODO：图片or文件模式
 
-- `qwen3-235b-a22b`
-- `qwen3-coder-plus`
-- `qwen3-coder-30b-a3b-instruct`
 
 ## 配置选项
 
